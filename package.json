@@ -1,0 +1,13 @@
+{
+  "name": "stil-raporu-backend",
+  "version": "1.0.0",
+  "description": "Kıyafet analiz uygulaması için API key'i gizleyen backend proxy",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "cors": "^2.8.5"
+  }
+}
