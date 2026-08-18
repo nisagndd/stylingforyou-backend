@@ -44,6 +44,8 @@ app.post("/analyze", async (req, res) => {
       return res.status(400).json({ error: "imageBase64 ve occasion zorunlu" });
     }
 
+    console.log(`Gelen görsel: mediaType=${imageMediaType}, uzunluk=${imageBase64.length}, baş=${imageBase64.slice(0, 20)}`);
+
     const rules = OCCASION_RULES[occasion] || [];
     const rulesText = rules.map((r, i) => `${i + 1}. ${r}`).join("\n");
 
