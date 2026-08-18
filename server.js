@@ -93,7 +93,10 @@ SADECE aşağıdaki JSON formatında yanıt ver, başka hiçbir metin ekleme:
 
     const data = await response.json();
     const textBlock = (data.content || []).find(b => b.type === "text");
-    if (!textBlock) throw new Error("Claude'dan geçerli yanıt alınamadı");
+    if (!textBlock) {
+      console.error("Claude API beklenmeyen yanıt döndürdü:", JSON.stringify(data));
+      throw new Error("Claude'dan geçerli yanıt alınamadı: " + (data.error?.message || JSON.stringify(data)));
+    }
 
     const cleaned = textBlock.text.replace(/```json|```/g, "").trim();
     const parsed = JSON.parse(cleaned);
