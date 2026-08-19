@@ -86,7 +86,7 @@ const OCCASION_RULES = {
 
 app.post("/analyze", async (req, res) => {
   try {
-    const { imageBase64, imageMediaType, occasion, destination } = req.body;
+    const { imageBase64, imageMediaType, occasion, destination, feedbackStyle } = req.body;
 
     if (!imageBase64 || !occasion) {
       return res.status(400).json({ error: "imageBase64 ve occasion zorunlu" });
@@ -96,8 +96,13 @@ app.post("/analyze", async (req, res) => {
 
     const rules = OCCASION_RULES[occasion] || [];
     const rulesText = rules.map((r, i) => `${i + 1}. ${r}`).join("\n");
+    const toneInstruction = feedbackStyle === "gentle"
+      ? "Geri bildirimini NAZİK ve YAPICI bir dille ver: eleştirilerini yumuşak, teşvik edici ve destekleyici bir tonla ilet, kişiyi cesaretlendir."
+      : "Geri bildirimini DİREKT ve NET bir dille ver: gerçekleri yumuşatmadan, açık ve dolaysız söyle.";
 
     const systemPrompt = `Sen deneyimli bir moda editörü ve stil danışmanısın. Kullanıcının yüklediği kıyafet fotoğrafını, belirtilen ortam/etkinlik için değerlendireceksin.
+
+${toneInstruction}
 
 Değerlendirmede İKİ kaynağı birleştir:
 1) Aşağıdaki SABİT KURALLAR (öncelik ver, ihlal varsa mutlaka belirt):
@@ -160,7 +165,7 @@ SADECE aşağıdaki JSON formatında yanıt ver, başka hiçbir metin ekleme:
 
 app.post("/compare", async (req, res) => {
   try {
-    const { imageABase64, imageAMediaType, imageBBase64, imageBMediaType, occasion, destination } = req.body;
+    const { imageABase64, imageAMediaType, imageBBase64, imageBMediaType, occasion, destination, feedbackStyle } = req.body;
 
     if (!imageABase64 || !imageBBase64 || !occasion) {
       return res.status(400).json({ error: "imageABase64, imageBBase64 ve occasion zorunlu" });
@@ -170,8 +175,13 @@ app.post("/compare", async (req, res) => {
 
     const rules = OCCASION_RULES[occasion] || [];
     const rulesText = rules.map((r, i) => `${i + 1}. ${r}`).join("\n");
+    const toneInstruction = feedbackStyle === "gentle"
+      ? "Geri bildirimini NAZİK ve YAPICI bir dille ver: eleştirilerini yumuşak, teşvik edici ve destekleyici bir tonla ilet."
+      : "Geri bildirimini DİREKT ve NET bir dille ver: gerçekleri yumuşatmadan, açık ve dolaysız söyle.";
 
     const systemPrompt = `Sen deneyimli bir moda editörü ve stil danışmanısın. Kullanıcı iki farklı kombin fotoğrafı (A ve B) yükledi ve bunları "${occasion}" ortamı için karşılaştırmanı istiyor.
+
+${toneInstruction}
 
 Değerlendirmede İKİ kaynağı birleştir:
 1) Aşağıdaki SABİT KURALLAR (öncelik ver, ihlal varsa mutlaka belirt):
