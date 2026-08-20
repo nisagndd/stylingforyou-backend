@@ -9,83 +9,93 @@ app.use(cors());
 app.use(express.json({ limit: "10mb" })); // fotoğraf base64 için limit
 
 // ---- KURAL SETİ: Buradan yönetin (app store onayı beklemeden değiştirebilirsiniz) ----
+// Anahtarlar mobil uygulamadaki OCCASIONS listesindeki "key" alanlarıyla birebir eşleşmeli.
 const OCCASION_RULES = {
-  "Özel Gün": [
+  special_occasion: [
     "Beyaz, krem veya gelinlik tonlarına çok yakın kıyafet ciddi puan kaybettirir",
     "Şık kumaşlar (saten, ipek, keten karışımı) ödüllendirilir",
     "Aşırı rahat/günlük parçalar (t-shirt, spor ayakkabı) puan düşürür"
   ],
-  "Günlük / Rahat": [
+  casual: [
     "Konfor öncelikli, resmiyet beklenmez",
     "Renk ve parça uyumu yine de değerlendirilir"
   ],
-  "Spor / Antrenman": [
+  sport: [
     "Fonksiyonel spor kıyafeti beklenir",
     "Günlük kıyafetle spora gitmek puan kaybettirir"
   ],
-  "Gece / Davet": [
+  night_out: [
     "İddialı, kendine güvenen parçalar ödüllendirilir",
     "Kombin bütünlüğü (üst-alt-aksesuar uyumu) önemlidir"
   ],
-  "Ofis / Profesyonel": [
+  office: [
     "Aşırı rahat parçalar (eşofman altı, terlik, plaj tipi giysiler) uygun değil",
     "Şık-rahat (smart casual) dengesi aranır",
     "Marka logolu abartılı ya da aşırı gösterişli parçalar puan düşürebilir",
     "Düzenli, ütülü ve bakımlı bir görünüm ödüllendirilir"
   ],
-  "Yaz Tatili": [
+  summer_vacation: [
     "Hafif, nefes alan kumaşlar (keten, pamuk) ödüllendirilir",
     "Aşırı kalın veya kapalı parçalar ortama uygun değil",
     "Güneş/plaj/deniz kenarı için pratiklik önemli bir kriter",
     "Canlı renkler ve rahat kesimler bu ortamda olumlu değerlendirilir"
   ],
-  "Kış Tatili": [
+  winter_vacation: [
     "Katmanlı giyim (layering) ödüllendirilir",
     "Soğuğa karşı yetersiz kalan kıyafet puan kaybettirir",
     "Kayak/dağ ortamıysa fonksiyonel ve teknik kıyafet beklenir",
     "Şıklık ile sıcak tutma dengesi aranır"
   ],
-  "Lüks / Fine Dining": [
+  fine_dining: [
     "Şık, iyi kesim ve kaliteli görünen parçalar ödüllendirilir",
     "Günlük veya spor kıyafetle (sneaker, şort, tişört) gitmek ciddi puan kaybettirir",
     "Aksesuar ve ayakkabı detaylarına özen gösterilmesi beklenir"
   ],
-  "After Party": [
+  after_party: [
     "İddialı, dikkat çekici ve enerjik parçalar ödüllendirilir",
     "Fazla sade veya gündüz havası taşıyan kombinler bu ortam için düşük puan alır",
     "Işıltılı kumaş, metalik detay veya çarpıcı aksesuar artı puan kazandırır"
   ],
-  "Randevu / Date": [
+  date: [
     "Kendine güvenen ama zorlama olmayan, doğal bir görünüm aranır",
     "Aşırı iddialı ile aşırı gündelik arasında bir denge ödüllendirilir",
     "Düzenli ve özenli görünen detaylar (temiz ayakkabı, uyumlu aksesuar) puan kazandırır"
   ],
-  "Festival": [
+  festival: [
     "Rahat, hareket özgürlüğü sağlayan parçalar ödüllendirilir",
     "Kişisel ve özgün stil unsurları (desen, katman, aksesuar) olumlu değerlendirilir",
     "Uzun saatler dışarıda geçirmeye uygun pratik kıyafet/ayakkabı artı puan"
   ],
-  "İçerik Üretimi (Influencer)": [
+  influencer: [
     "Fotojenik, kamerada net ve etkili görünen renk/kesim tercih edilir",
     "Kombinin bütünlüğü ve çekim ortamıyla uyumu değerlendirilir",
     "Dikkat dağıtan aşırı karmaşık desen/aksesuar karışıklığı puan düşürebilir"
   ]
 };
 
+function languageInstruction(language) {
+  return language === "en"
+    ? "ÇOK ÖNEMLİ: Tüm yanıtını (verdict, summary, strengths, improvements, pros, cons dahil JSON içindeki TÜM metin alanlarını) İNGİLİZCE yaz. Kurallar Türkçe verilse de, senin yazacağın her cümle İngilizce olmalı."
+    : "Tüm yanıtını (JSON içindeki tüm metin alanlarını) TÜRKÇE yaz.";
+}
+
 app.post("/analyze", async (req, res) => {
   try {
-    const { imageBase64, imageMediaType, occasion, destination } = req.body;
+    const { imageBase64, imageMediaType, occasion, occasionLabel, destination, language } = req.body;
 
     if (!imageBase64 || !occasion) {
       return res.status(400).json({ error: "imageBase64 ve occasion zorunlu" });
     }
 
-    console.log(`Gelen görsel: mediaType=${imageMediaType}, uzunluk=${imageBase64.length}, baş=${imageBase64.slice(0, 20)}`);
+    console.log(`Gelen görsel: mediaType=${imageMediaType}, uzunluk=${imageBase64.length}, baş=${imageBase64.slice(0, 20)}, lang=${language}`);
 
     const rules = OCCASION_RULES[occasion] || [];
     const rulesText = rules.map((r, i) => `${i + 1}. ${r}`).join("\n");
+    const occasionText = occasionLabel || occasion;
 
     const systemPrompt = `Sen deneyimli bir moda editörü ve stil danışmanısın. Kullanıcının yüklediği kıyafet fotoğrafını, belirtilen ortam/etkinlik için değerlendireceksin.
+
+${languageInstruction(language)}
 
 Değerlendirmede İKİ kaynağı birleştir:
 1) Aşağıdaki SABİT KURALLAR (öncelik ver, ihlal varsa mutlaka belirt):
@@ -103,8 +113,8 @@ SADECE aşağıdaki JSON formatında yanıt ver, başka hiçbir metin ekleme:
 }`;
 
     const userText = destination
-      ? `Bu kıyafetle "${occasion}" ortamına, özellikle şuraya gidiyorum: ${destination}. Değerlendirir misin?`
-      : `Bu kıyafetle "${occasion}" ortamına gidiyorum. Değerlendirir misin?`;
+      ? `Bu kıyafetle "${occasionText}" ortamına, özellikle şuraya gidiyorum: ${destination}. Değerlendirir misin?`
+      : `Bu kıyafetle "${occasionText}" ortamına gidiyorum. Değerlendirir misin?`;
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -148,18 +158,21 @@ SADECE aşağıdaki JSON formatında yanıt ver, başka hiçbir metin ekleme:
 
 app.post("/compare", async (req, res) => {
   try {
-    const { imageABase64, imageAMediaType, imageBBase64, imageBMediaType, occasion, destination } = req.body;
+    const { imageABase64, imageAMediaType, imageBBase64, imageBMediaType, occasion, occasionLabel, destination, language } = req.body;
 
     if (!imageABase64 || !imageBBase64 || !occasion) {
       return res.status(400).json({ error: "imageABase64, imageBBase64 ve occasion zorunlu" });
     }
 
-    console.log(`Karşılaştırma isteği: occasion=${occasion}, A uzunluk=${imageABase64.length}, B uzunluk=${imageBBase64.length}`);
+    console.log(`Karşılaştırma isteği: occasion=${occasion}, A uzunluk=${imageABase64.length}, B uzunluk=${imageBBase64.length}, lang=${language}`);
 
     const rules = OCCASION_RULES[occasion] || [];
     const rulesText = rules.map((r, i) => `${i + 1}. ${r}`).join("\n");
+    const occasionText = occasionLabel || occasion;
 
-    const systemPrompt = `Sen deneyimli bir moda editörü ve stil danışmanısın. Kullanıcı iki farklı kombin fotoğrafı (A ve B) yükledi ve bunları "${occasion}" ortamı için karşılaştırmanı istiyor.
+    const systemPrompt = `Sen deneyimli bir moda editörü ve stil danışmanısın. Kullanıcı iki farklı kombin fotoğrafı (A ve B) yükledi ve bunları "${occasionText}" ortamı için karşılaştırmanı istiyor.
+
+${languageInstruction(language)}
 
 Değerlendirmede İKİ kaynağı birleştir:
 1) Aşağıdaki SABİT KURALLAR (öncelik ver, ihlal varsa mutlaka belirt):
@@ -181,8 +194,8 @@ SADECE aşağıdaki JSON formatında yanıt ver, başka hiçbir metin ekleme:
 }`;
 
     const userText = destination
-      ? `"${occasion}" ortamı için, özellikle şuraya gidiyorum: ${destination}. A ve B kombinlerini karşılaştırır mısın?`
-      : `"${occasion}" ortamı için A ve B kombinlerini karşılaştırır mısın?`;
+      ? `"${occasionText}" ortamı için, özellikle şuraya gidiyorum: ${destination}. A ve B kombinlerini karşılaştırır mısın?`
+      : `"${occasionText}" ortamı için A ve B kombinlerini karşılaştırır mısın?`;
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
