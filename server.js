@@ -10,14 +10,7 @@ app.use(express.json({ limit: "10mb" })); // fotoğraf base64 için limit
 
 // ---- KURAL SETİ: Buradan yönetin (app store onayı beklemeden değiştirebilirsiniz) ----
 const OCCASION_RULES = {
-  "İş Görüşmesi": [
-    "Spor ayakkabı veya spor terliği kabul edilmez, puan düşürür",
-    "Renk paleti sade ve nötr olmalı (lacivert, gri, siyah, bej tercih edilir)",
-    "Yırtık veya çok yıpratılmış kot puan kaybettirir",
-    "Blazer, ceket veya yapılandırılmış parçalar ekstra puan kazandırır",
-    "Aşırı gösterişli aksesuar veya parlak desenler puan düşürür"
-  ],
-  "Düğün (Davetli)": [
+  "Özel Gün": [
     "Beyaz, krem veya gelinlik tonlarına çok yakın kıyafet ciddi puan kaybettirir",
     "Şık kumaşlar (saten, ipek, keten karışımı) ödüllendirilir",
     "Aşırı rahat/günlük parçalar (t-shirt, spor ayakkabı) puan düşürür"
@@ -51,11 +44,6 @@ const OCCASION_RULES = {
     "Soğuğa karşı yetersiz kalan kıyafet puan kaybettirir",
     "Kayak/dağ ortamıysa fonksiyonel ve teknik kıyafet beklenir",
     "Şıklık ile sıcak tutma dengesi aranır"
-  ],
-  "Seyahat": [
-    "Rahat ama düzenli bir görünüm ödüllendirilir (havalimanı, uzun yolculuk)",
-    "Kolay kombinlenebilir, pratik ve az kırışan parçalar tercih sebebi",
-    "Aşırı resmi ya da aşırı dağınık görünüm puan kaybettirir"
   ],
   "Lüks / Fine Dining": [
     "Şık, iyi kesim ve kaliteli görünen parçalar ödüllendirilir",
