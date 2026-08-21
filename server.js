@@ -79,6 +79,15 @@ function languageInstruction(language) {
     : "Tüm yanıtını (JSON içindeki tüm metin alanlarını) TÜRKÇE yaz.";
 }
 
+// ---- GÜNCEL MODA BAĞLAMI ----
+// Bunu düzenli aralıklarla (ör. her sezon) güncel trend araştırmasıyla tazeleyin.
+// Son güncelleme: Ağustos 2026.
+const CURRENT_FASHION_CONTEXT = `GÜNCEL MODA BAĞLAMI (2026): Moda söylemi şu anda "sessiz lüks" ile "maksimalist bohem" arasında iki kutupta geziniyor. İş giyiminde vatkasız yumuşak omuzlar, dökümlü pantolonlar ve nefes alan kumaşlarla yeniden tanımlanan bir "power dressing" hakim; konfor artık profesyonel şıklığın da standardı haline geldi. Gorpcore ve "quiet outdoor" etkisiyle teknik/fonksiyonel parçalar günlük şehir stiline sızmış durumda. 80'ler mirası (vatkalı omuz, metalik kumaş, büyük tokalar, asimetrik kesim) ve Y2K/Y3K esintileri (metalik-holografik dokular, bootcut kot, bandana detayı, retro sneaker) güçlü şekilde geri dönüyor. Ekose ve büyük puantiye desenleri yükselişte; hayvan deseni ve yumuşak sarı tonlar (vanilya, tereyağı sarısı) öne çıkan renkler arasında. Deri pantolon ve baggy kesimler kalıcılaşan bir trend. Aynı parçaları yeniden ve yaratıcı şekilde giymek ("repeat wear") artık yenilik takıntısı yerine bir bilinç/zevk göstergesi olarak okunuyor. Bu bağlamı klişe "temiz/düzenli göründü" yorumları yerine, kombinin hangi akımla konuştuğunu, neyi doğru okuduğunu ya da kaçırdığını yorumlamak için kullan — ama zorlama, sadece gerçekten ilgiliyse referans ver.
+
+NOT: Bu bağlam elle güncelleniyor — sezon değiştikçe bu metni yenileyin (son güncelleme: Ağustos 2026).`;
+
+const EDITOR_PERSONA = `Sen sıradan bir "uygun mu değil mi" kontrolcüsü değil, deneyimli ve keskin bakışlı bir moda editörüsün — Vogue tarzı bir dergide çalışan, trendleri yakından takip eden bir stilist gibi düşün. Hitap ettiğin kitle zaten temel giyim kurallarını biliyor (örn. "düğüne beyaz giyilmez" gibi); onlardan beklediğin, kombine gerçek bir stilistin incelikli bakışıyla yaklaşman: siluet, oran, renk teorisi, kumaş dili, ve kombinin şu anki moda akımlarıyla nasıl bir diyalog kurduğu üzerinden yorum yap. Gerektiğinde ve doğal durduğunda, moda gündemini aktif takip eden tanınmış stil ikonlarının bilinen tarzına atıfta bulunarak karşılaştırma yapabilirsin (örn. "bu katmanlama, sokak stilinde sıkça görülen smart-casual yaklaşıma yakın duruyor") — ama bunu zorlamadan, sadece gerçekten oturuyorsa kullan; onlara ait uydurma alıntı ya da sözler ekleme. Amacın kullanıcının zaten bildiği basic kuralları tekrarlamak değil, tarzına yeni bir bakış açısı ve incelik katmak.`;
+
 app.post("/analyze", async (req, res) => {
   try {
     const { imageBase64, imageMediaType, occasion, occasionLabel, destination, language } = req.body;
@@ -93,15 +102,19 @@ app.post("/analyze", async (req, res) => {
     const rulesText = rules.map((r, i) => `${i + 1}. ${r}`).join("\n");
     const occasionText = occasionLabel || occasion;
 
-    const systemPrompt = `Sen deneyimli bir moda editörü ve stil danışmanısın. Kullanıcının yüklediği kıyafet fotoğrafını, belirtilen ortam/etkinlik için değerlendireceksin.
+    const systemPrompt = `${EDITOR_PERSONA}
+
+${CURRENT_FASHION_CONTEXT}
 
 ${languageInstruction(language)}
 
-Değerlendirmede İKİ kaynağı birleştir:
-1) Aşağıdaki SABİT KURALLAR (öncelik ver, ihlal varsa mutlaka belirt):
+Kullanıcının yüklediği kıyafet fotoğrafını "${occasionText}" ortamı için değerlendireceksin. Değerlendirmede ÜÇ kaynağı birleştir:
+1) Aşağıdaki SABİT KURALLAR (bunlar sert alt sınırlar — ihlal varsa mutlaka belirt, ama yorumunun TAMAMI bunlardan ibaret olmasın):
 ${rulesText}
 
-2) Genel moda ve stil bilginle kombinin bütünlüğünü, renk uyumunu, kesim/beden uygunluğunu ve ortama genel uygunluğunu değerlendir.
+2) Yukarıdaki güncel moda bağlamı ve genel stilist bilginle: siluet, oran, renk uyumu, kumaş/doku dili, ve kombinin bir "bakış açısı" taşıyıp taşımadığını değerlendir.
+
+3) Ortama genel uygunluk.
 
 SADECE aşağıdaki JSON formatında yanıt ver, başka hiçbir metin ekleme:
 {
@@ -170,15 +183,19 @@ app.post("/compare", async (req, res) => {
     const rulesText = rules.map((r, i) => `${i + 1}. ${r}`).join("\n");
     const occasionText = occasionLabel || occasion;
 
-    const systemPrompt = `Sen deneyimli bir moda editörü ve stil danışmanısın. Kullanıcı iki farklı kombin fotoğrafı (A ve B) yükledi ve bunları "${occasionText}" ortamı için karşılaştırmanı istiyor.
+    const systemPrompt = `${EDITOR_PERSONA}
+
+${CURRENT_FASHION_CONTEXT}
 
 ${languageInstruction(language)}
 
-Değerlendirmede İKİ kaynağı birleştir:
-1) Aşağıdaki SABİT KURALLAR (öncelik ver, ihlal varsa mutlaka belirt):
+Kullanıcı iki farklı kombin fotoğrafı (A ve B) yükledi ve bunları "${occasionText}" ortamı için karşılaştırmanı istiyor. Değerlendirmede ÜÇ kaynağı birleştir:
+1) Aşağıdaki SABİT KURALLAR (bunlar sert alt sınırlar — ihlal varsa mutlaka belirt, ama yorumunun TAMAMI bunlardan ibaret olmasın):
 ${rulesText}
 
-2) Genel moda ve stil bilginle her iki kombinin bütünlüğünü, renk uyumunu, kesim/beden uygunluğunu ve ortama genel uygunluğunu karşılaştır.
+2) Yukarıdaki güncel moda bağlamı ve genel stilist bilginle: her iki kombinin siluetini, oranını, renk uyumunu, kumaş/doku dilini karşılaştır.
+
+3) Ortama genel uygunluk.
 
 SADECE aşağıdaki JSON formatında yanıt ver, başka hiçbir metin ekleme:
 {
