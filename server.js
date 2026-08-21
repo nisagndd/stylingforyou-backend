@@ -257,6 +257,84 @@ SADECE aşağıdaki JSON formatında yanıt ver, başka hiçbir metin ekleme:
   }
 });
 
+app.post("/closet-outfit", async (req, res) => {
+  try {
+    const { occasion, occasionLabel, destination, language, items } = req.body;
+
+    if (!occasion || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: "occasion ve en az bir dolap parçası (items) zorunlu" });
+    }
+
+    console.log(`AI Dolabım isteği: occasion=${occasion}, parça sayısı=${items.length}, lang=${language}`);
+
+    const rules = OCCASION_RULES[occasion] || [];
+    const rulesText = rules.map((r, i) => `${i + 1}. ${r}`).join("\n");
+    const occasionText = occasionLabel || occasion;
+
+    const systemPrompt = `${EDITOR_PERSONA}
+
+${CURRENT_FASHION_CONTEXT}
+
+${languageInstruction(language)}
+
+Kullanıcının kişisel dolabındaki kıyafet fotoğraflarını göreceksin. Her fotoğrafın hemen öncesinde "Parça ID: <id>, Kategori: <kategori>" bilgisi verilecek. Görevin: bu parçalar arasından "${occasionText}" ortamı için EN UYGUN kombini seçmek.
+
+Kurallar:
+- SADECE sana verilen parça ID'lerinden seç, asla var olmayan bir parça uydurma.
+- Bir kombin için genelde üst+alt YA DA elbise, artı varsa uygun ayakkabı/çanta/aksesuar seç. Zorunlu değil, dolapta uygun bir parça yoksa o kategoriyi boş bırak.
+- Aşağıdaki SABİT KURALLARI da dikkate al:
+${rulesText}
+
+SADECE aşağıdaki JSON formatında yanıt ver, başka hiçbir metin ekleme:
+{
+  "selectedIds": ["<seçilen parça id'leri>"],
+  "verdict": "<3-5 kelimelik kısa başlık>",
+  "summary": "<seçimin neden bu ortama uygun olduğunu anlatan 2-3 cümle>"
+}`;
+
+    const userText = destination
+      ? `"${occasionText}" ortamı için, özellikle şuraya gidiyorum: ${destination}. Dolabımdaki parçalardan bana en uygun kombini seçer misin?`
+      : `"${occasionText}" ortamı için dolabımdaki parçalardan bana en uygun kombini seçer misin?`;
+
+    const content = [];
+    for (const item of items) {
+      content.push({ type: "text", text: `Parça ID: ${item.id}, Kategori: ${item.category}` });
+      content.push({ type: "image", source: { type: "url", url: item.url } });
+    }
+    content.push({ type: "text", text: userText });
+
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01"
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 1200,
+        system: systemPrompt,
+        messages: [{ role: "user", content }]
+      })
+    });
+
+    const data = await response.json();
+    const textBlock = (data.content || []).find(b => b.type === "text");
+    if (!textBlock) {
+      console.error("Claude API beklenmeyen yanıt döndürdü:", JSON.stringify(data));
+      throw new Error("Claude'dan geçerli yanıt alınamadı: " + (data.error?.message || JSON.stringify(data)));
+    }
+
+    const cleaned = textBlock.text.replace(/```json|```/g, "").trim();
+    const parsed = JSON.parse(cleaned);
+
+    res.json(parsed);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Kombin oluşturulurken hata oluştu" });
+  }
+});
+
 app.get("/occasions", (req, res) => {
   res.json(Object.keys(OCCASION_RULES));
 });
